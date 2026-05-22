@@ -2,6 +2,8 @@
 #define IO_H
 #include "adc.h"
 
+int read_adc_file(const char *filename, ADCHeader *header, ADCSample **samples);
+
 int write_results_file(
     const char *filename,
     ADCHeader header,

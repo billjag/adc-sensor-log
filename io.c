@@ -1,5 +1,68 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "io.h"
+
+int read_adc_file (const char *filename, ADCHeader *header, ADCSample **samples) {
+    FILE *file;
+    size_t read_count;
+    file = fopen(filename, "rb");
+
+    if (file == NULL) {
+        printf("could not open file\n");
+        return 1;
+    }
+    read_count = fread(header, sizeof(ADCHeader), 1, file);
+
+    if (read_count != 1) {
+        printf("could not read the header\n");
+        fclose(file);
+        return 1;
+    }
+
+    if (header->magic != ADC_MAGIC) {
+        printf("wrong magic number\n");
+        fclose(file);
+        return 1;
+    }
+
+    if (header->version != ADC_VERSION) {
+        printf("wrong version number\n");
+        fclose(file);
+        return 1;
+    }
+
+    if (header->channel_count != ADC_CHANNELS) {
+        printf("wrong number of channels\n");
+        fclose(file);
+        return 1;
+    }
+
+    if (header->sample_rate_hz != ADC_SAMPLE_RATE) {
+        printf("wrong sample rate\n");
+        fclose(file);
+        return 1;
+    }
+
+    *samples = malloc(header->record_count * sizeof(ADCSample));
+
+    if (*samples == NULL) {
+        printf("memory allocation failed\n");
+        fclose(file);
+        return 1;
+    }
+
+    read_count = fread(*samples, sizeof(ADCSample), header->record_count, file);
+
+    if (read_count != header->record_count) {
+        printf("count not read all the ADC samples\n");
+        free(*samples);
+        fclose(file);
+        return 1;
+    }
+
+    fclose(file);
+    return 0;
+}
 
 int write_results_file(
     const char *filename,

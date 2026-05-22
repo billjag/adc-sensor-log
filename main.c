@@ -8,11 +8,9 @@
 
 int main(int argc, char *argv[]) {
 
-    FILE *file;
     ADCHeader header;
-    ADCSample *samples;
+    ADCSample *samples= NULL;
 
-    size_t read_count;
     int i;
     int channel;
 
@@ -32,7 +30,6 @@ int main(int argc, char *argv[]) {
     int sensorfault_count[ADC_CHANNELS] = {0};
 
 
-
     printf("ADC Sensor Data Processor\n");
 
     if (argc != 2) {
@@ -40,20 +37,15 @@ int main(int argc, char *argv[]) {
         printf("example: adc_sensor_log.bin\n");
         return 1;
     }
+
     printf("file selected: %s\n", argv[1]);
 
-    file = fopen(argv[1], "rb");
-    if (file == NULL) {
-        printf("ERROR: could not open the file\n");
+    if (read_adc_file(argv[1], &header, &samples) != 0) {
         return 1;
     }
 
-    read_count = fread(&header, sizeof(ADCHeader), 1, file);
-    if (read_count != 1) {
-        printf("ERROR: could not read this file.\n");
-        fclose(file);
-        return 1;
-    }
+    printf("\nheader is valid\n");
+    printf("samples loaded successfully\n");
 
     printf("\nheader information:\n");
     printf("magic number: 0x%X\n", header.magic);
@@ -61,48 +53,6 @@ int main(int argc, char *argv[]) {
     printf("channel count: %u\n", header.channel_count);
     printf("record count: %u\n", header.record_count);
     printf("sample rate: %u Hz\n", header.sample_rate_hz);
-
-    if (header.magic != ADC_MAGIC) {
-        printf("wrong magic number.\n");
-        fclose(file);
-        return 1;
-    }
-
-    if (header.version != ADC_VERSION) {
-        printf("wrong file version\n");
-        fclose(file);
-        return 1;
-    }
-
-    if (header.channel_count != ADC_CHANNELS) {
-        printf("wrong number of channels\n");
-        fclose(file);
-        return 1;
-    }
-
-    if (header.sample_rate_hz != ADC_SAMPLE_RATE) {
-        printf("wrong sample rate\n");
-        fclose(file);
-        return 1;
-    }
-
-    printf("\nheader is valid\n");
-    samples = malloc(header.record_count * sizeof(ADCSample));
-
-    if (samples == NULL) {
-        printf("memory allocation failed\n");
-        fclose(file);
-        return 1;
-    }
-
-    read_count = fread(samples, sizeof(ADCSample), header.record_count, file);
-
-    if (read_count != header.record_count) {
-        printf("could not read all ADC samples\n");
-        free(samples);
-        fclose(file);
-        return 1;
-    }
 
     printf("\nsamples loaded successfully\n");
     printf("first 5 samples:\n");
@@ -122,7 +72,7 @@ int main(int argc, char *argv[]) {
     for (i = 0; i < header.record_count; i++) {
         channel = samples[i].channel_id;
 
-        voltage = (samples[i].raw_value / ADC_MAX_RAW) * ADC_VREF;
+        voltage = raw_to_voltage(samples[i].raw_value);
 
         total_voltage[channel] = total_voltage[channel] + voltage;
         sample_count[channel]++;
@@ -172,11 +122,12 @@ int main(int argc, char *argv[]) {
 
     printf("\nbasic voltage statistic:\n");
     for (channel = 0; channel < ADC_CHANNELS; channel++) {
-        printf("channel %d: mean = %.3f V, min = %.3f V, max = %.3f V, samples = %d\n",
+        printf("channel %d: mean = %.3f V, min = %.3f V, max = %.3f V, std dev = %.3f V, samples = %d\n",
             channel,
-            total_voltage[channel] / sample_count[channel],
+            mean_voltage[channel],
             min_voltage[channel],
             max_voltage[channel],
+            std_dev[channel],
             sample_count[channel]);
     }
     printf("\nfault summary:\n");
@@ -202,13 +153,6 @@ int main(int argc, char *argv[]) {
     }
     printf("total sequence gaps found: %d\n", sequencegap_count);
 
-    free(samples);
-    fclose(file);
-
-//txt file
-
-    free(samples);
-    fclose(file);
 
     if (write_results_file("results.txt",
         header,
@@ -223,11 +167,11 @@ int main(int argc, char *argv[]) {
         sequencegap_count) != 0) {
 
         free(samples);
-        fclose(file);
         return 1;
     }
 
     printf("results.txt has been created\n");
+    free(samples);
 
   return 0;
   }
