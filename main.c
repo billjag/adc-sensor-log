@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "adc.h"
-#include <math.h>
+#include "stats.h"
+
 
 int main(int argc, char *argv[]) {
 
@@ -150,13 +151,13 @@ int main(int argc, char *argv[]) {
 
 
     for (channel = 0; channel < ADC_CHANNELS; channel++) {
-        mean_voltage[channel] = total_voltage[channel] / sample_count[channel];
+        mean_voltage[channel] = calculate_mean(total_voltage[channel], sample_count[channel]);
     }
 
     for (i = 0; i< header.record_count; i++) {
         channel = samples[i].channel_id;
 
-        voltage = (samples[i].raw_value / ADC_MAX_RAW) * ADC_VREF;
+        voltage = raw_to_voltage(samples[i].raw_value);
 
         sum_squared_diff[channel] =
             sum_squared_diff[channel] +
@@ -164,7 +165,7 @@ int main(int argc, char *argv[]) {
     }
 
     for (channel = 0; channel < ADC_CHANNELS; channel++) {
-        std_dev[channel] = sqrt(sum_squared_diff[channel] / sample_count[channel]);
+        std_dev[channel] = calculate_standard_deviation(sum_squared_diff[channel], sample_count[channel]);
     }
 
 
@@ -202,6 +203,8 @@ int main(int argc, char *argv[]) {
 
     free(samples);
     fclose(file);
+
+    //txt file
 
     results = fopen("results.txt", "w");
 
