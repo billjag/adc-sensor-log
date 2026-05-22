@@ -7,4 +7,6 @@ add_executable(adc_sensor_log main.c
         adc.h
         adc.c
         stats.h
-        stats.c)
+        stats.c
+        io.h
+        io.c)

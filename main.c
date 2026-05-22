@@ -2,12 +2,13 @@
 #include <stdlib.h>
 #include "adc.h"
 #include "stats.h"
+#include "io.h"
+
 
 
 int main(int argc, char *argv[]) {
 
     FILE *file;
-    FILE *results;
     ADCHeader header;
     ADCSample *samples;
 
@@ -204,52 +205,29 @@ int main(int argc, char *argv[]) {
     free(samples);
     fclose(file);
 
-    //txt file
+//txt file
 
-    results = fopen("results.txt", "w");
+    free(samples);
+    fclose(file);
 
-    if (results == NULL) {
-        printf("error: could not create results.txt\n");
+    if (write_results_file("results.txt",
+        header,
+        mean_voltage,
+        min_voltage,
+        max_voltage,
+        std_dev,
+        sample_count,
+        overvoltage_count,
+        undervoltage_count,
+        sensorfault_count,
+        sequencegap_count) != 0) {
+
         free(samples);
         fclose(file);
         return 1;
     }
 
-    fprintf(results, "ADC sensor data processor results\n\n");
-    fprintf(results, "header information:\n");
-    fprintf(results, "magic number: 0x%X\n", header.magic);
-    fprintf(results, "version: %u\n", header.version);
-    fprintf(results, "channel count: %u\n", header.channel_count);
-    fprintf(results, "record count: %u\n", header.record_count);
-    fprintf(results, "sample rate: %u Hz\n\n", header.sample_rate_hz);
-
-    fprintf(results, "voltage statistics:\n");
-    for (channel = 0; channel < ADC_CHANNELS; channel++) {
-        fprintf(results, "channel %d: mean = %.3f V, min = %.3f V, max = %.3f V, std dev = %.3f V, samples = %d\n",
-                channel,
-                mean_voltage[channel],
-                min_voltage[channel],
-                max_voltage[channel],
-                std_dev[channel],
-                sample_count[channel]);
-    }
-
-    fprintf(results, "\nfault summary:\n");
-    for (channel = 0; channel < ADC_CHANNELS; channel++) {
-        fprintf(results, "channel %d: overvoltage = %d, undervoltage = %d, sensor faults = %d\n",
-                channel,
-                overvoltage_count[channel],
-                undervoltage_count[channel],
-                sensorfault_count[channel]);
-    }
-
-    fprintf(results, "\nsequence number check:\n");
-    fprintf(results, "total sequence gaps found: %d\n", sequencegap_count);
-    fprintf(results, "gap after sequence 798: expected 799 but found 801\n");
-    fprintf(results, "gap after sequence 2497: expected 2498 but found 2500\n");
-
-    fclose(results);
-    printf("\nresults.txt has been created.\n");
+    printf("results.txt has been created\n");
 
   return 0;
   }
