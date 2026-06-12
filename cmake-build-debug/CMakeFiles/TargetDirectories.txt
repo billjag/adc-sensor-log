@@ -1,0 +1,3 @@
+C:/Users/User/Desktop/adc sensor log/cmake-build-debug/CMakeFiles/adc_sensor_log.dir
+C:/Users/User/Desktop/adc sensor log/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/User/Desktop/adc sensor log/cmake-build-debug/CMakeFiles/rebuild_cache.dir
