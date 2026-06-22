@@ -9,6 +9,7 @@ int main(int argc, char *argv[]) {
     ADCSample *samples;
     size_t read_count;
     int i;
+    double voltage;
 
     printf("ADC Sensor Data Processor\n");
 
@@ -85,11 +86,13 @@ int main(int argc, char *argv[]) {
     printf("first 5 samples:\n");
 
     for (i = 0; i < 5; i++) {
-        printf("sample %d: time = %.3f, channel = %u, raw = %u, flags = %u, sequence = %u\n",
+        voltage = (samples[i].raw_value / ADC_MAX_RAW) * ADC_VREF;
+        printf("sample %d: time = %.3f, channel = %u, raw = %u, voltage = %.3f V, flags = %u, sequence = %u\n",
             i,
             samples[i].timestamp,
             samples[i].channel_id,
             samples[i].raw_value,
+            voltage,
             samples[i].status_flags,
             samples[i].sequence_number);
 
