@@ -9,7 +9,13 @@ int main(int argc, char *argv[]) {
     ADCSample *samples;
     size_t read_count;
     int i;
+    int channel;
+
     double voltage;
+    double total_voltage[ADC_CHANNELS] = {0};
+    double min_voltage[ADC_CHANNELS] = {0};
+    double max_voltage[ADC_CHANNELS] = {0};
+    int sample_count[ADC_CHANNELS] = {0};
 
     printf("ADC Sensor Data Processor\n");
 
@@ -97,6 +103,36 @@ int main(int argc, char *argv[]) {
             samples[i].sequence_number);
 
     }
+    for (i = 0; i < header.record_count; i++) {
+        channel = samples[i].channel_id;
+
+        voltage = (samples[i].raw_value / ADC_MAX_RAW) * ADC_VREF;
+
+        total_voltage[channel] = total_voltage[channel] + voltage;
+        sample_count[channel]++;
+
+        if (sample_count[channel] == 1) {
+            min_voltage[channel] = voltage;
+            max_voltage[channel] = voltage;
+        }
+        if (voltage < min_voltage[channel]) {
+            min_voltage[channel] = voltage;
+        }
+        if (voltage > max_voltage[channel]) {
+            max_voltage[channel] = voltage;
+        }
+
+    }
+    printf("\nbasic voltage statistic:\n");
+    for (channel = 0; channel < ADC_CHANNELS; channel++) {
+        printf("channel %d: mean = %.3f V, min = %.3f V, max = %.3f V, samples = %d\n",
+            channel,
+            total_voltage[channel] / sample_count[channel],
+            min_voltage[channel],
+            max_voltage[channel],
+            sample_count[channel]);
+    }
+
     free(samples);
     fclose(file);
 
