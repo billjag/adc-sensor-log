@@ -20,6 +20,10 @@ int main(int argc, char *argv[]) {
     double mean_voltage[ADC_CHANNELS] = {0};
     double sum_squared_diff[ADC_CHANNELS] = {0};
     double std_dev[ADC_CHANNELS] = {0};
+    int overvoltage_count[ADC_CHANNELS] = {0};
+    int undervoltage_count[ADC_CHANNELS] = {0};
+    int sensorfault_count[ADC_CHANNELS] = {0};
+
 
 
     printf("ADC Sensor Data Processor\n");
@@ -127,7 +131,18 @@ int main(int argc, char *argv[]) {
             max_voltage[channel] = voltage;
         }
 
+        if (voltage > 3.0) {
+            overvoltage_count[channel]++;
+        }
+        if (voltage < 0.3) {
+            undervoltage_count[channel]++;
+        }
+        if (samples[i].status_flags & 0x01) {
+            sensorfault_count[channel]++;
+        }
+
     }
+
 
     for (channel = 0; channel < ADC_CHANNELS; channel++) {
         mean_voltage[channel] = total_voltage[channel] / sample_count[channel];
@@ -156,6 +171,14 @@ int main(int argc, char *argv[]) {
             min_voltage[channel],
             max_voltage[channel],
             sample_count[channel]);
+    }
+    printf("\nfault summary:\n");
+    for (channel = 0; channel < ADC_CHANNELS; channel++) {
+        printf("channel %d: overvoltage = %d, undervoltage = %d, sensor faults = %d\n",
+            channel,
+            overvoltage_count[channel],
+            undervoltage_count[channel],
+            sensorfault_count[channel]);
     }
 
     free(samples);
