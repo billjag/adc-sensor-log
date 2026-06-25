@@ -12,6 +12,9 @@ int main(int argc, char *argv[]) {
     int i;
     int channel;
 
+    int sequencegap_count = 0;
+    uint32_t expected_sequence;
+
     double voltage;
     double total_voltage[ADC_CHANNELS] = {0};
     double min_voltage[ADC_CHANNELS] = {0};
@@ -180,6 +183,20 @@ int main(int argc, char *argv[]) {
             undervoltage_count[channel],
             sensorfault_count[channel]);
     }
+
+    printf("\nsequence number check:\n");
+    for (i = 1; i < header.record_count; i++) {
+        expected_sequence = samples[i -1].sequence_number +1;
+
+        if (samples[i].sequence_number != expected_sequence) {
+            printf("gap found after sequence %u. expected %u but found %u.\n",
+                samples[i - 1].sequence_number,
+                expected_sequence,
+                samples[i].sequence_number);
+            sequencegap_count++;
+        }
+    }
+    printf("total sequence gaps found: %d\n", sequencegap_count);
 
     free(samples);
     fclose(file);
