@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "adc.h"
+#include <math.h>
 
 int main(int argc, char *argv[]) {
 
@@ -16,6 +17,10 @@ int main(int argc, char *argv[]) {
     double min_voltage[ADC_CHANNELS] = {0};
     double max_voltage[ADC_CHANNELS] = {0};
     int sample_count[ADC_CHANNELS] = {0};
+    double mean_voltage[ADC_CHANNELS] = {0};
+    double sum_squared_diff[ADC_CHANNELS] = {0};
+    double std_dev[ADC_CHANNELS] = {0};
+
 
     printf("ADC Sensor Data Processor\n");
 
@@ -123,6 +128,26 @@ int main(int argc, char *argv[]) {
         }
 
     }
+
+    for (channel = 0; channel < ADC_CHANNELS; channel++) {
+        mean_voltage[channel] = total_voltage[channel] / sample_count[channel];
+    }
+
+    for (i = 0; i< header.record_count; i++) {
+        channel = samples[i].channel_id;
+
+        voltage = (samples[i].raw_value / ADC_MAX_RAW) * ADC_VREF;
+
+        sum_squared_diff[channel] =
+            sum_squared_diff[channel] +
+                ((voltage - mean_voltage[channel]) * (voltage - mean_voltage[channel]));
+    }
+
+    for (channel = 0; channel < ADC_CHANNELS; channel++) {
+        std_dev[channel] = sqrt(sum_squared_diff[channel] / sample_count[channel]);
+    }
+
+
     printf("\nbasic voltage statistic:\n");
     for (channel = 0; channel < ADC_CHANNELS; channel++) {
         printf("channel %d: mean = %.3f V, min = %.3f V, max = %.3f V, samples = %d\n",
